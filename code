@@ -1,0 +1,258 @@
+from google.colab import drive
+drive.mount('/content/drive')
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+%matplotlib inline
+df=pd.read_csv('/content/drive/MyDrive/diabetes.csv')
+df.head()
+#lets describe the data
+df.describe()
+#infromation of dataset
+df.info()
+#any null values
+#not neccessary in above information we can see
+df.isnull().values.any()
+#histogram
+df.hist(bins=10,figsize=(10,10))
+plt.show()
+# Assuming 'df' is your DataFrame
+plt.figure(figsize=(10, 10))
+plt.scatter(df['Age'], df['Insulin'])
+plt.xlabel('Age')
+plt.ylabel('Insulin')
+plt.title('Scatter Plot of Age vs Insulin')
+plt.show()
+# Set the style and figure size
+sns.set(style="whitegrid")
+sns.set(rc={'figure.figsize':(10,10)})
+
+# Create a box plot for 'Age' and 'Insulin' across 'Diabetes'
+sns.boxplot(x='Diabetes', y='Age', data=df, palette="Set1")
+plt.title('Box Plot of Age by Diabetes')
+plt.show()
+
+sns.boxplot(x='Diabetes', y='Insulin', data=df, palette="Set1")
+plt.title('Box Plot of Insulin by Diabetes')
+plt.show()
+# Set the style and figure size
+sns.set(style="whitegrid")
+sns.set(rc={'figure.figsize':(10,10)})
+
+# Function to plot a line graph based on a histogram
+def plot_line_graph(data, title):
+    # Calculate histogram
+    hist, bins = np.histogram(data, bins=10)
+    # Calculate bin centers
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    # Plot line graph
+    plt.figure(figsize=(10, 10))
+    plt.plot(bin_centers, hist, label=title)
+    plt.xlabel(title)
+    plt.ylabel('Frequency')
+    plt.title(f'Line Graph of {title}')
+    plt.legend()
+    plt.show()
+
+# Plot line graphs for 'Insulin', 'BloodPressure', and 'DiabetesPedigreeFunction'
+plot_line_graph(df['Insulin'], 'Insulin')
+plot_line_graph(df['BloodPressure'], 'BloodPressure')
+plot_line_graph(df['DiabetesPedigreeFunction'], 'DiabetesPedigreeFunction')
+#correlation
+
+sns.heatmap(df.corr())
+# we can see skin thickness,insulin,pregnencies and age are full independent to each other
+#age and pregencies has negative correlation
+# Assuming 'df' is your DataFrame
+# Calculate the correlation matrix
+correlation_matrix = df.corr()
+
+# Create the heatmap with the 'coolwarm' color map
+plt.figure(figsize=(10, 8))
+sns.heatmap(correlation_matrix, cmap='coolwarm')
+
+# Add a color bar
+plt.colorbar(label='Correlation')
+
+# Display the plot
+plt.show()
+#lets count total outcome in each target 0 1
+#0 means no diabeted
+#1 means patient with diabtes
+sns.countplot(y=df['Outcome'],palette='Set2')
+# Assuming 'df' is your DataFrame and 'Outcome' is the column with the outcomes
+# Create a color palette with yellow for no diabetes (0) and green for diabetes (1)
+custom_palette = {"0": "yellow", "1": "green"}
+
+# Use the custom palette in the countplot
+sns.countplot(y=df['Outcome'], palette=custom_palette)
+
+# Show the plot
+plt.show()
+# Assuming 'df' is your DataFrame and 'Outcome' is the column with the outcomes
+outcomes = df['Outcome'].value_counts()
+
+# Define colors for the pie chart
+colors = ['blue', 'red']
+
+# Create pie chart
+plt.figure(figsize=(8, 6))
+plt.pie(outcomes.values, labels=outcomes.index, colors=colors, autopct='%1.1f%%', startangle=90)
+plt.title('Distribution of Diabetes Outcomes')
+plt.axis('equal') # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.show()
+#Splitting train test data 80 20 ratio
+from sklearn.model_selection import train_test_split
+train_X,test_X,train_y,test_y=train_test_split(X,y,test_size=0.2)
+train_X.shape,test_X.shape,train_y.shape,test_y.shape
+from sklearn.svm import SVC
+from sklearn.model_selection import GridSearchCV, cross_val_score
+from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectKBest, f_classif
+import pandas as pd
+
+# Assuming train_X and train_y are your training data and labels
+# And test_X and test_y are your testing data and labels
+
+# Feature Scaling
+scaler = StandardScaler()
+train_X_scaled = scaler.fit_transform(train_X)
+test_X_scaled = scaler.transform(test_X)
+
+# Feature Selection
+selector = SelectKBest(f_classif, k=8) # Select top 10 features
+train_X_selected = selector.fit_transform(train_X_scaled, train_y)
+test_X_selected = selector.transform(test_X_scaled)
+
+# Hyperparameter Tuning
+param_grid = {'C': [0.2, 2, 20, 200], 'kernel': ['linear', 'rbf'], 'gamma': [1, 0.1, 0.01, 0.001]}
+grid_search = GridSearchCV(SVC(), param_grid, cv=5, scoring='accuracy')
+grid_search.fit(train_X_selected, train_y)
+
+# Best Parameters
+best_params = grid_search.best_params_
+print("Best Parameters: ", best_params)
+
+# Training with Best Parameters
+clf = SVC(**best_params)
+clf.fit(train_X_selected, train_y)
+
+# Predictions
+y_pred = clf.predict(test_X_selected)
+
+# Accuracy
+ac = accuracy_score(test_y, y_pred)
+print("Accuracy: ", ac)
+
+# ROC AUC Score
+rc = roc_auc_score(test_y, y_pred)
+print("ROC AUC Score: ", rc)
+
+# Cross Validation
+cross_val_score(clf, train_X_selected, train_y, cv=10)
+
+# Display Predicted Values
+# pd.DataFrame(data={'Actual': test_y, 'Predicted': y_pred}).head()
+#Support Vector Machine
+from sklearn.svm import SVC
+
+clf=SVC(kernel='linear')
+clf.fit(train_X,train_y)
+y_pred=clf.predict(test_X)
+#find accuracy
+ac=accuracy_score(test_y,y_pred)
+acc.append(ac)
+
+#find the ROC_AOC curve
+rc=roc_auc_score(test_y,y_pred)
+roc.append(rc)
+print("\nAccuracy {0} ROC {1}".format(ac,rc))
+
+#cross val score
+result=cross_validate(clf,train_X,train_y,scoring=scoring,cv=10)
+display_result(result)
+
+#display predicted values uncomment below line
+#pd.DataFrame(data={'Actual':test_y,'Predicted':y_pred}).head()
+#KNN
+
+from sklearn.neighbors import KNeighborsClassifier
+
+clf=KNeighborsClassifier(n_neighbors=6)
+clf.fit(train_X,train_y)
+y_pred=clf.predict(test_X)
+#find accuracy
+ac=accuracy_score(test_y,y_pred)
+acc.append(ac)
+
+#find the ROC_AOC curve
+rc=roc_auc_score(test_y,y_pred)
+roc.append(rc)
+print("\nAccuracy {0} ROC {1}".format(ac,rc))
+
+#cross val score
+result=cross_validate(clf,train_X,train_y,scoring=scoring,cv=10)
+display_result(result)
+
+#display predicted values uncomment below line
+#pd.DataFrame(data={'Actual':test_y,'Predicted':y_pred}).head()
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.model_selection import GridSearchCV, cross_val_score
+from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectKBest, f_classif
+import pandas as pd
+
+# Assuming train_X and train_y are your training data and labels
+# And test_X and test_y are your testing data and labels
+
+# Feature Scaling
+scaler = StandardScaler()
+train_X_scaled = scaler.fit_transform(train_X)
+test_X_scaled = scaler.transform(test_X)
+
+# Feature Selection
+selector = SelectKBest(f_classif, k=8) # Select top 10 features
+train_X_selected = selector.fit_transform(train_X_scaled, train_y)
+test_X_selected = selector.transform(test_X_scaled)
+
+# Hyperparameter Tuning
+param_grid = {
+    'n_estimators': [50, 100, 150],
+    'learning_rate': [0.1, 0.2, 0.3],
+    'max_depth': [2, 3, 4],
+    'subsample': [0.8, 0.9, 1.0]
+}
+grid_search = GridSearchCV(GradientBoostingClassifier(), param_grid, cv=5, scoring='accuracy')
+grid_search.fit(train_X_selected, train_y)
+
+# Best Parameters
+best_params = grid_search.best_params_
+print("Best Parameters: ", best_params)
+
+# Training with Best Parameters
+clf = GradientBoostingClassifier(**best_params)
+clf.fit(train_X_selected, train_y)
+
+# Predictions
+y_pred = clf.predict(test_X_selected)
+
+# Accuracy
+ac = accuracy_score(test_y, y_pred)
+print("Accuracy: ", ac)
+
+# ROC AUC Score
+rc = roc_auc_score(test_y, y_pred)
+print("ROC AUC Score: ", rc)
+
+# Cross Validation
+cross_val_score(clf, train_X_selected, train_y, cv=5)
+
+# Display Predicted Values
+# pd.DataFrame(data={'Actual': test_y, 'Predicted': y_pred}).head()
